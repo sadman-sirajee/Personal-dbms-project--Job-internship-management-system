@@ -1,0 +1,176 @@
+================================================================================
+JOB/INTERNSHIP MANAGEMENT SYSTEM - PROJECT DOCUMENTATION & SUMMARY
+================================================================================
+
+PROJECT TITLE:
+Job/Internship Management System (CareerPulse Portal)
+
+APPLICATION TYPE:
+Web-Based Multi-Role CRUD Application with Role-Based Access Control (RBAC)
+
+DEVELOPMENT STACK:
+- Backend: PHP 8.2 (PDO MySQL)
+- Database: MySQL 8.0 / MariaDB
+- Frontend: HTML5, CSS3, Bootstrap 5.3, Bootstrap Icons
+- Web Server: Apache 2.4 (XAMPP)
+- Architecture: Role-Based Access Control (Admin vs Candidate/User)
+
+--------------------------------------------------------------------------------
+1. PROJECT OVERVIEW & SUMMARY
+--------------------------------------------------------------------------------
+The Job/Internship Management System is a full-featured web portal developed 
+using PHP and MySQL with a strict separation between Administrator and Candidate 
+(User) roles:
+
+- ADMINISTRATOR: Holds full administrative privileges to manage all system users, 
+  publish and update job/internship vacancies, view submitted candidate applications 
+  across all postings, inspect applicant cover notes and portfolios, and update 
+  application review statuses (Pending, Reviewed, Accepted, Rejected).
+  
+- CANDIDATE / USER: Has access to a dedicated candidate portal to explore vacancies, 
+  filter by position type (Jobs / Internships), submit applications with contact 
+  number, portfolio/resume links, and pitch notes, track review progress in real-time 
+  via "My Applications", and withdraw pending submissions.
+
+--------------------------------------------------------------------------------
+2. DEFAULT LOGIN CREDENTIALS & SELF-REGISTRATION
+--------------------------------------------------------------------------------
+Administrator Account:
+  Email:    admin@gmail.com
+  Password: admin123
+  Role:     Admin
+
+Standard Candidate Accounts:
+  Email:    rahim@gmail.com
+  Password: admin123
+  Role:     User
+
+  Email:    karim@gmail.com
+  Password: admin123
+  Role:     User
+
+Public Candidate Self-Registration:
+  URL:      http://localhost/job-internship-management/register.php
+  Allows any candidate to create an account and immediately apply for vacancies.
+
+Database Name:
+  job_internship_db
+
+--------------------------------------------------------------------------------
+3. LIST OF IMPLEMENTED FEATURES
+--------------------------------------------------------------------------------
+[X] 1. Secure Authentication & Session Management
+    - Session-based login with password_verify()
+    - Passwords securely hashed using bcrypt (password_hash())
+    - Protection against session fixation with session_regenerate_id()
+    - Role-Based Access Control: require_admin() and require_login()
+    - Clean logout mechanism destroying cookies and session storage
+
+[X] 2. Candidate Self-Registration (register.php)
+    - Public candidate sign-up with client & server-side validation
+    - Duplicate email detection and strong password validation
+    - Auto-login upon registration for seamless candidate onboarding
+
+[X] 3. Role-Aware Executive & Candidate Dashboards
+    - Administrator Dashboard:
+      * 4 KPI cards: Total Users, Total Jobs, Total Internships, Total Applications
+      * Pending application review alert counter
+      * Direct module shortcuts: User Management, Postings, Application Reviews
+      * Recent Applications table & Recent Postings table
+    - Candidate Dashboard:
+      * Candidate KPI cards: Available Jobs, Available Internships, My Applications, Accepted Offers
+      * Quick shortcuts to explore vacancies and track submitted applications
+      * "My Recent Applications" table with real-time status badges
+      * "Latest Openings" grid with 1-click "Apply Now" or "Applied" indicator
+
+[X] 4. Module 1: User Management (Admin Only - Full CRUD)
+    - CREATE: Add new administrators or standard users with validation
+    - READ: Tabular view with user ID, name, email, role badge, and registration date
+    - UPDATE: Edit user name, email, role, and optional password reset
+    - DELETE: Dedicated confirmation dialog with user details
+    - RBAC: Fully protected with require_admin(); non-admins gracefully redirected
+
+[X] 5. Module 2: Job/Internship Postings (Full CRUD & RBAC)
+    - CREATE: Publish vacancies with Title, Company, Location, Type, Description, and Deadline (Admin)
+    - READ: Tabular view with position title, hiring company, location, badges, and deadlines
+    - UPDATE: Edit position parameters, locations, descriptions, and deadlines (Admin)
+    - DELETE: Dedicated confirmation view before permanent deletion (Admin)
+    - DETAIL VIEW: Position specifications, requirements, and integrated candidate action cards
+
+[X] 6. Module 3: Job & Internship Application System
+    - APPLY: Dedicated submission page (applications/apply.php) capturing phone number, 
+      cover note/pitch, and optional portfolio/resume link
+    - DUPLICATE PREVENTION: Enforced unique constraint (user_id, job_id) so candidates 
+      cannot apply multiple times to the same vacancy
+    - CANDIDATE TRACKER (applications/my_applications.php): Complete application history 
+      with status indicators (Pending, Reviewed, Accepted, Rejected), view submitted pitch modal, 
+      and safe application withdrawal option
+    - ADMIN APPLICATION MANAGEMENT (applications/index.php):
+      * Filter by Job Vacancy and by Review Status
+      * Real-time counters: Total, Pending, Reviewed, Accepted, Rejected
+      * Candidate Profile modal with contact info, cover note, and portfolio link
+      * Status update dropdown (Pending -> Reviewed -> Accepted -> Rejected)
+      * Application removal / archival capability
+
+[X] 7. Search & Filter Features
+    - Parameterized multi-field search querying Title, Company, and Location simultaneously
+    - Instant categorization by Type: All, Job Postings, and Internship Postings
+    - Supports combined search and filter queries simultaneously
+
+[X] 8. Security & Data Integrity
+    - 100% prepared statements via PHP PDO preventing SQL injection
+    - XSS mitigation using htmlspecialchars() on all outputs
+    - Foreign key constraints with ON DELETE CASCADE maintaining referential integrity
+
+--------------------------------------------------------------------------------
+4. DATABASE DESIGN & TABLES
+--------------------------------------------------------------------------------
+Database: job_internship_db
+
+Table: users
+  id          INT AUTO_INCREMENT PRIMARY KEY
+  name        VARCHAR(100) NOT NULL
+  email       VARCHAR(100) NOT NULL UNIQUE
+  password    VARCHAR(255) NOT NULL
+  role        VARCHAR(20) DEFAULT 'User'
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+Table: jobs
+  id           INT AUTO_INCREMENT PRIMARY KEY
+  title        VARCHAR(150) NOT NULL
+  company      VARCHAR(150) NOT NULL
+  location     VARCHAR(100) DEFAULT NULL
+  type         VARCHAR(20) NOT NULL (Job / Internship)
+  description  TEXT
+  deadline     DATE DEFAULT NULL
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+Table: applications
+  id           INT AUTO_INCREMENT PRIMARY KEY
+  user_id      INT NOT NULL (FK -> users.id ON DELETE CASCADE)
+  job_id       INT NOT NULL (FK -> jobs.id ON DELETE CASCADE)
+  phone        VARCHAR(50) DEFAULT NULL
+  cover_note   TEXT DEFAULT NULL
+  resume_url   VARCHAR(255) DEFAULT NULL
+  status       ENUM('Pending', 'Reviewed', 'Accepted', 'Rejected') DEFAULT 'Pending'
+  applied_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  UNIQUE KEY   unique_user_job (user_id, job_id)
+
+--------------------------------------------------------------------------------
+5. TESTING & VERIFICATION SUMMARY
+--------------------------------------------------------------------------------
+A comprehensive automated test suite was executed (test_suite.php):
+- 25 test cases executed
+- 25 test cases passed (100% success rate, 0 failures)
+- Verified database connectivity, password verification, User CRUD,
+  Job/Internship CRUD, search algorithms, filter operations, RBAC session helpers,
+  Application submission, duplicate prevention, application review/status updates,
+  candidate application retrieval, and cascade deletion.
+- HTTP server responded with HTTP 200 OK via Apache.
+
+================================================================================
+SUBMISSION DELIVERABLES:
+1. ZIP File:       Job-Internship-Management-System.zip
+2. SQL File:       database.sql
+3. Documentation:  Project_Documentation.txt
+================================================================================
