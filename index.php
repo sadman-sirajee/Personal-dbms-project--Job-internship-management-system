@@ -1,100 +1,143 @@
 <?php
 /**
- * Main Landing Page
+ * User Management - Read / View All Users
  * Job/Internship Management System
  */
-require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/../config/database.php';
+require_admin();
 
-// If user is already logged in, redirect to dashboard
-if (is_logged_in()) {
-    header("Location: " . base_url('dashboard.php'));
-    exit;
+// Search filter
+$search = trim($_GET['search'] ?? '');
+
+try {
+    if (!empty($search)) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE name LIKE ? OR email LIKE ? ORDER BY id ASC");
+        $term = "%{$search}%";
+        $stmt->execute([$term, $term]);
+    } else {
+        $stmt = $pdo->query("SELECT * FROM users ORDER BY id ASC");
+    }
+    $users = $stmt->fetchAll();
+} catch (PDOException $e) {
+    die("Error fetching users: " . htmlspecialchars($e->getMessage()));
 }
 
-$page_title = "Welcome - Job/Internship Portal";
-include_once __DIR__ . '/includes/header.php';
+$page_title = "User Management - All Users";
+include_once __DIR__ . '/../includes/header.php';
 ?>
 
-<div class="container py-5">
-    <div class="row align-items-center py-5">
-        <div class="col-lg-7 text-center text-lg-start mb-5 mb-lg-0">
-            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6 mb-3 fw-semibold">
-                <i class="bi bi-stars me-1"></i> Academic Project &amp; CRUD Demonstration
-            </span>
-            <h1 class="display-4 fw-bold lh-1 mb-3 text-dark">
-                Job &amp; Internship <br><span class="text-primary">Management System</span>
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h2 fw-bold text-dark mb-1">
+                <i class="bi bi-people-fill text-primary me-2"></i>User Management
             </h1>
-            <p class="lead text-secondary mb-4">
-                A complete web-based CRUD application built with PHP, MySQL, and Bootstrap. 
-                Featuring role-based authentication, user administration, job/internship listing management, 
-                real-time search, and type-based filtering.
-            </p>
-            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                <a href="<?= base_url('login.php') ?>" class="btn btn-primary btn-lg px-4 me-md-2 shadow">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Access System Dashboard
-                </a>
-            </div>
+            <p class="text-muted mb-0">View, add, edit, and delete system users and administrators.</p>
         </div>
-        <div class="col-lg-5">
-            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-dark text-white p-4 text-center">
-                    <i class="bi bi-shield-lock-fill display-4 text-primary"></i>
-                    <h4 class="mt-2 mb-0">System Sign-In</h4>
-                    <p class="text-secondary small mb-0">Administrator &amp; User Access</p>
-                </div>
-                <div class="card-body p-4 text-center">
-                    <p class="text-muted">
-                        Manage users, post job vacancies, manage internship applications, and view analytics in real-time.
-                    </p>
-                    <div class="alert alert-info small text-start mb-3">
-                        <strong>Default Admin Credentials:</strong><br>
-                        Email: <code>admin@gmail.com</code><br>
-                        Password: <code>admin123</code>
-                    </div>
-                    <a href="<?= base_url('login.php') ?>" class="btn btn-outline-primary w-100 py-2">
-                        Go to Login Page
-                    </a>
-                </div>
-            </div>
+        <div class="mt-3 mt-md-0">
+            <a href="<?= base_url('users/create.php') ?>" class="btn btn-primary shadow-sm">
+                <i class="bi bi-person-plus-fill me-1"></i> Add New User
+            </a>
         </div>
     </div>
 
-    <!-- Feature Grid -->
-    <div class="row g-4 py-4 row-cols-1 row-cols-md-3">
-        <div class="col">
-            <div class="card h-100 p-3 shadow-sm border-0">
-                <div class="card-body">
-                    <div class="text-primary fs-1 mb-3">
-                        <i class="bi bi-people-fill"></i>
+    <!-- Search Card -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form method="GET" action="<?= base_url('users/index.php') ?>" class="row g-3 align-items-center">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search by user name or email..." value="<?= htmlspecialchars($search) ?>">
                     </div>
-                    <h5 class="card-title fw-bold">User Management</h5>
-                    <p class="card-text text-muted">Complete CRUD functionality: Add new administrators or standard users, view all user records, edit details, and securely delete users.</p>
                 </div>
-            </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter me-1"></i> Search
+                    </button>
+                    <?php if (!empty($search)): ?>
+                        <a href="<?= base_url('users/index.php') ?>" class="btn btn-outline-secondary">
+                            Reset
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
-        <div class="col">
-            <div class="card h-100 p-3 shadow-sm border-0">
-                <div class="card-body">
-                    <div class="text-success fs-1 mb-3">
-                        <i class="bi bi-briefcase-fill"></i>
-                    </div>
-                    <h5 class="card-title fw-bold">Job &amp; Internship CRUD</h5>
-                    <p class="card-text text-muted">Create job opportunities and internships with companies, locations, descriptions, and application deadlines. Full update and delete control.</p>
-                </div>
-            </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-person-lines-fill text-primary me-2"></i>All Users (<?= count($users) ?>)
+            </h5>
+            <span class="badge bg-light text-muted border">CRUD: READ Operation</span>
         </div>
-        <div class="col">
-            <div class="card h-100 p-3 shadow-sm border-0">
-                <div class="card-body">
-                    <div class="text-warning fs-1 mb-3">
-                        <i class="bi bi-search"></i>
-                    </div>
-                    <h5 class="card-title fw-bold">Search &amp; Filtering</h5>
-                    <p class="card-text text-muted">Instantly filter listings by Type (Job or Internship) and query across job titles, hiring companies, and work locations simultaneously.</p>
-                </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Registration Date</th>
+                            <th class="text-end" style="width: 160px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($users)): ?>
+                            <?php foreach ($users as $row): ?>
+                                <tr>
+                                    <td class="fw-bold text-muted">#<?= $row['id'] ?></td>
+                                    <td>
+                                        <div class="fw-semibold text-dark"><?= htmlspecialchars($row['name']) ?></div>
+                                        <?php if ($row['id'] == $_SESSION['user_id']): ?>
+                                            <span class="badge bg-info text-dark small" style="font-size: 0.7rem;">Current Session</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:<?= htmlspecialchars($row['email']) ?>" class="text-decoration-none text-muted">
+                                            <i class="bi bi-envelope me-1"></i> <?= htmlspecialchars($row['email']) ?>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge <?= ($row['role'] === 'Admin') ? 'badge-role-admin' : 'badge-role-user' ?>">
+                                            <?= htmlspecialchars($row['role']) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
+                                        </small>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="<?= base_url('users/edit.php?id=' . $row['id']) ?>" class="btn btn-outline-warning btn-sm" title="Edit User">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <a href="<?= base_url('users/delete.php?id=' . $row['id']) ?>" class="btn btn-outline-danger btn-sm" title="Delete User">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="bi bi-people display-4 d-block mb-2 text-secondary opacity-50"></i>
+                                        No users found matching your criteria.
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<?php include_once __DIR__ . '/includes/footer.php'; ?>
+<?php include_once __DIR__ . '/../includes/footer.php'; ?>
